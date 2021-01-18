@@ -1,4 +1,4 @@
-const { tokenizer } = require("./compiler");
+const { tokenizer, parser } = require("./compiler");
 const assert        = require('assert');
 
 var input  = '(add 2 (subtract 4 2))';
@@ -15,6 +15,27 @@ var tokens = [
   { type: 'paren',  value: ')'        }
 ];
 
-
+const ast = {
+  type: 'Program',
+  body: [{
+    type: 'CallExpression',
+    name: 'add',
+    params: [{
+      type: 'NumberLiteral',
+      value: '2'
+    }, {
+      type: 'CallExpression',
+      name: 'subtract',
+      params: [{
+        type: 'NumberLiteral',
+        value: '4'
+      }, {
+        type: 'NumberLiteral',
+        value: '2'
+      }]
+    }]
+  }]
+};
 // 测试词法分析器是否正常工作
 assert.deepStrictEqual(tokenizer(input), tokens, 'Tokenizer should turn `input` string into `tokens` array')
+assert.deepStrictEqual(parser(tokens),ast,  'Parser should turn `tokens` array into `ast`' )

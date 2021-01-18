@@ -67,7 +67,7 @@ function tokenizer(input) {
 function parser(tokens) {
   let current = 0;
   function walk() {
-    let token = token[current];
+    let token = tokens[current];
 
     if(token.type === 'number') {
       current++;
@@ -78,7 +78,7 @@ function parser(tokens) {
     }
 
     if(token.type === 'paren' && token.value === '(') {
-      token = token[++current];
+      token = tokens[++current];
       const node = {
         type: 'CallExpression',
         name: token.value,

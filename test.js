@@ -1,7 +1,8 @@
-const { tokenizer, parser, transformer } = require("./compiler");
+const { tokenizer, parser, transformer, codeGenerator } = require("./compiler");
 const assert = require("assert");
 
 var input = "(add 2 (subtract 4 2))";
+var output = 'add(2, subtract(4, 2));';
 
 var tokens = [
   { type: "paren", value: "(" },
@@ -86,3 +87,5 @@ assert.deepStrictEqual(
   "Parser should turn `tokens` array into `ast`"
 );
 assert.deepStrictEqual(transformer(ast), newAst, 'Transformer should trun `ast` into a `newAst`')
+
+assert.deepStrictEqual(codeGenerator(newAst), output, 'Code Generator should turn `newAst` into `output` string');

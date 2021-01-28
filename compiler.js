@@ -69,26 +69,26 @@ function parser(tokens) {
   function walk() {
     let token = tokens[current];
 
-    if(token.type === 'number') {
+    if (token.type === "number") {
       current++;
       return {
-        type: 'NumberLiteral',
-        value: token.value
-      }
+        type: "NumberLiteral",
+        value: token.value,
+      };
     }
 
-    if(token.type === 'paren' && token.value === '(') {
+    if (token.type === "paren" && token.value === "(") {
       token = tokens[++current];
       const node = {
-        type: 'CallExpression',
+        type: "CallExpression",
         name: token.value,
-        params: []
-      }
+        params: [],
+      };
       token = tokens[++current];
 
-      while(
-        (token.type !== 'paren') ||
-        (token.type === 'paren' && token.value !== ')')
+      while (
+        token.type !== "paren" ||
+        (token.type === "paren" && token.value !== ")")
       ) {
         node.params.push(walk());
         token = tokens[current];
@@ -100,86 +100,108 @@ function parser(tokens) {
   }
 
   const ast = {
-    type: 'Program',
-    body: []
-  }
+    type: "Program",
+    body: [],
+  };
 
-  while(current < tokens.length) {
-    ast.body.push(walk())
+  while (current < tokens.length) {
+    ast.body.push(walk());
   }
   return ast;
 }
 
 function traverser(ast, visitor) {
   function traverseArray(array, parent) {
-    array.forEach(function(child) {
-      traverseNode(child, parent)
-    })
+    array.forEach(function (child) {
+      traverseNode(child, parent);
+    });
   }
 
   function traverseNode(node, parent) {
     const method = visitor[node.type];
-    if(method) {
+    if (method) {
       method(node, parent);
     }
 
     switch (node.type) {
-      case 'Program':
+      case "Program":
         traverseArray(node.body, node);
         break;
-      case 'CallExpression': 
+      case "CallExpression":
         traverseArray(node.params, node);
         break;
-      case 'NumberLiteral':
+      case "NumberLiteral":
         break;
       default:
-        throw new TypeError(node.type)
+        throw new TypeError(node.type);
     }
-
   }
-  traverseNode(ast, null)
+  traverseNode(ast, null);
 }
 
 function transformer(ast) {
-  debugger
   const newAst = {
-    type: 'Program',
-    body: []
-  }
+    type: "Program",
+    body: [],
+  };
 
   ast._context = newAst.body;
   traverser(ast, {
-    NumberLiteral: function(node, parent) {
+    NumberLiteral: function (node, parent) {
       parent._context.push({
-        type: 'NumberLiteral',
-        value: node.value
-      })
+        type: "NumberLiteral",
+        value: node.value,
+      });
     },
-    CallExpression: function(node, parent) {
+    CallExpression: function (node, parent) {
       let expression = {
-        type: 'CallExpression',
+        type: "CallExpression",
         callee: {
-          type: 'Identifier',
-          name: node.name
+          type: "Identifier",
+          name: node.name,
         },
-        arguments: []
-      }
+        arguments: [],
+      };
       node._context = expression.arguments;
-      if(parent.type !== 'CallExpression') {
+      if (parent.type !== "CallExpression") {
         expression = {
-          type: 'ExpressionStatement',
-          expression
-        }
+          type: "ExpressionStatement",
+          expression,
+        };
       }
 
       parent._context.push(expression);
-    }
-  })
+    },
+  });
 
   return newAst;
+}
+
+function codeGenerator(node) {
+  switch (node.type) {
+    case "Program":
+      return node.body.map(codeGenerator).join("\n");
+    case "ExpressionStatement":
+      return codeGenerator(node.expression) + ";";
+    case "CallExpression":
+      return (
+        codeGenerator(node.callee) +
+        "(" +
+        node.arguments.map(codeGenerator).join(", ") +
+        ")"
+      );
+    case "Identifier":
+      return node.name;
+
+    case "NumberLiteral":
+      return node.value;
+    default:
+      throw new TypeError(node.type);
+  }
 }
 module.exports = {
   tokenizer,
   parser,
-  transformer
+  transformer,
+  codeGenerator,
 };

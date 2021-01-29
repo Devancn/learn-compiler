@@ -199,9 +199,18 @@ function codeGenerator(node) {
       throw new TypeError(node.type);
   }
 }
+
+function compiler(input) {
+  const tokens = tokenizer(input);
+  const ast = parser(tokens);
+  const newAst = transformer(ast);
+  const output = codeGenerator(newAst);
+  return output;
+}
 module.exports = {
   tokenizer,
   parser,
   transformer,
   codeGenerator,
+  compiler
 };
